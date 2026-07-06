@@ -1,0 +1,10 @@
+{
+  "name":"Chill Pros Commercial Platform",
+  "short_name":"Chill Pros",
+  "start_url":"./index.html",
+  "display":"standalone",
+  "background_color":"#02070d",
+  "theme_color":"#008dff",
+  "orientation":"any",
+  "icons":[{"src":"assets/chill-pros-logo.jpg","sizes":"1024x1024","type":"image/jpeg","purpose":"any maskable"}]
+}
