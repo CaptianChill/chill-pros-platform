@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Chill Pros AMS Prototype</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">CP</div>
+      <div><strong>CHILL PROS</strong><span>OPERATIONS OVERLAY</span></div>
+    </div>
+    <nav id="nav">
+      <button class="active" data-page="dashboard">Dashboard</button>
+      <button data-page="assets">Assets</button>
+      <button data-page="add">Add Asset</button>
+      <button data-page="scan">Scan QR</button>
+      <button data-page="workorders">Work Orders</button>
+      <button data-page="pm">Preventive Maintenance</button>
+      <button data-page="reports">Reports</button>
+    </nav>
+    <div class="side-footer">Prototype v0.1<br>Jobber overlay foundation</div>
+  </aside>
+
+  <main>
+    <header>
+      <button class="mobile-menu" id="mobileMenu">☰</button>
+      <div>
+        <h1 id="pageTitle">Operations Dashboard</h1>
+        <p id="pageSubtitle">Chill Pros asset intelligence and field operations</p>
+      </div>
+      <div class="user-chip"><span class="status-dot"></span> Owner</div>
+    </header>
+
+    <section id="dashboard" class="page active">
+      <div class="hero">
+        <div><span class="eyebrow">SATURDAY • LIVE OPERATIONS</span><h2>Good afternoon, Chill Pros</h2><p>Manage assets, service activity, and preventive maintenance from one field-ready workspace.</p></div>
+        <button class="primary" onclick="showPage('scan')">Scan Equipment QR</button>
+      </div>
+      <div class="stats">
+        <article><span>Assets Managed</span><strong>248</strong><small>Across 17 locations</small></article>
+        <article><span>Open Work Orders</span><strong>14</strong><small>4 require approval</small></article>
+        <article><span>PM Due This Week</span><strong>23</strong><small>8 due in 48 hours</small></article>
+        <article><span>Asset Health</span><strong>89%</strong><small>Portfolio average</small></article>
+      </div>
+      <div class="grid-two">
+        <article class="panel">
+          <div class="panel-head"><h3>Priority Assets</h3><button class="text-btn" onclick="showPage('assets')">View all</button></div>
+          <div id="priorityList"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><h3>Recent Activity</h3></div>
+          <div class="timeline">
+            <div><b>RTU-014</b><span>Contactor replacement completed</span><small>18 min ago</small></div>
+            <div><b>IM-006</b><span>Quarterly cleaning documented</span><small>1 hr ago</small></div>
+            <div><b>WIC-003</b><span>Low-temperature alert added</span><small>2 hrs ago</small></div>
+            <div><b>RTU-009</b><span>PM checklist approved</span><small>Yesterday</small></div>
+          </div>
+        </article>
+      </div>
+      <div class="quick-actions">
+        <button onclick="showPage('add')">＋ Add Asset</button>
+        <button onclick="showPage('assets')">⌕ Search Assets</button>
+        <button onclick="showPage('workorders')">▤ Work Orders</button>
+        <button onclick="showPage('pm')">✓ PM Schedule</button>
+      </div>
+    </section>
+
+    <section id="assets" class="page">
+      <div class="toolbar">
+        <input id="assetSearch" placeholder="Search asset ID, customer, type, model or serial">
+        <select id="assetFilter"><option value="">All equipment</option><option>RTU</option><option>Ice Machine</option><option>Walk-In Cooler</option><option>Reach-In</option></select>
+        <button class="primary" onclick="showPage('add')">Add Asset</button>
+      </div>
+      <div class="panel">
+        <div class="asset-table" id="assetTable"></div>
+      </div>
+    </section>
+
+    <section id="detail" class="page">
+      <button class="back" onclick="showPage('assets')">← Back to assets</button>
+      <div id="assetDetail"></div>
+    </section>
+
+    <section id="add" class="page">
+      <div class="panel form-panel">
+        <div class="stepper"><span class="on">1</span><i></i><span>2</span><i></i><span>3</span><i></i><span>4</span></div>
+        <h2>Add New Asset</h2>
+        <p>Capture the core equipment record. Additional technical fields can be added after creation.</p>
+        <form id="assetForm">
+          <div class="form-grid">
+            <label>Customer<input name="customer" required placeholder="Customer or account"></label>
+            <label>Location<input name="location" required placeholder="Service location"></label>
+            <label>Equipment Type<select name="type" required><option value="">Select type</option><option>RTU</option><option>Ice Machine</option><option>Walk-In Cooler</option><option>Walk-In Freezer</option><option>Reach-In</option><option>Commercial Kitchen</option></select></label>
+            <label>Manufacturer<input name="manufacturer" required placeholder="Manufacturer"></label>
+            <label>Model Number<input name="model" required placeholder="Model number"></label>
+            <label>Serial Number<input name="serial" required placeholder="Serial number"></label>
+            <label>Equipment Location<input name="equipmentLocation" placeholder="Roof, kitchen, mechanical room…"></label>
+            <label>Refrigerant<input name="refrigerant" placeholder="R-410A, R-404A…"></label>
+          </div>
+          <label class="wide">Technician Notes<textarea name="notes" placeholder="Nameplate condition, access notes, observed condition…"></textarea></label>
+          <div class="form-actions"><button type="reset" class="secondary">Clear</button><button class="primary" type="submit">Create Asset & Generate ID</button></div>
+        </form>
+      </div>
+    </section>
+
+    <section id="scan" class="page">
+      <div class="scanner panel">
+        <div class="scan-frame"><span></span><span></span><span></span><span></span><div>QR</div></div>
+        <h2>Scan Chill Pros Asset Tag</h2>
+        <p>Camera integration will open the matching asset record. Use the demo button to simulate a successful scan.</p>
+        <button class="primary" onclick="openAsset('CP-SA-000014')">Simulate Scan: CP-SA-000014</button>
+        <div class="manual-entry"><input id="manualAsset" placeholder="Enter asset ID manually"><button onclick="manualLookup()">Open</button></div>
+      </div>
+    </section>
+
+    <section id="workorders" class="page">
+      <div class="empty panel"><div class="large-icon">▤</div><h2>Work Orders</h2><p>Jobber work-order synchronization is reserved for the integration phase.</p><button class="primary">Start Integration Mapping</button></div>
+    </section>
+
+    <section id="pm" class="page">
+      <div class="panel">
+        <div class="panel-head"><h3>Preventive Maintenance Queue</h3><span class="badge warning">23 due</span></div>
+        <div class="pm-list">
+          <div><b>CP-SA-000006 • Ice Machine</b><span>Quarterly sanitation • Due today</span><button>Open</button></div>
+          <div><b>CP-SA-000003 • Walk-In Cooler</b><span>Monthly inspection • Due tomorrow</span><button>Open</button></div>
+          <div><b>CP-SA-000014 • RTU</b><span>Spring cooling PM • Due Monday</span><button>Open</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="reports" class="page">
+      <div class="empty panel"><div class="large-icon">▥</div><h2>Reports & Analytics</h2><p>Portfolio health, PM compliance, repair frequency, refrigerant exposure, and replacement forecasting will appear here.</p></div>
+    </section>
+  </main>
+</div>
+<div id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
