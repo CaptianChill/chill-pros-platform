@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 from jwt import PyJWKClient
 from pydantic import BaseModel, Field
 
-app = FastAPI(title="Chill Bros Blender Render Worker", version="1.1.0")
+app = FastAPI(title="Chill Bros Blender Render Worker", version="1.2.0")
 
 VERCEL_OWNER_ID = "team_dDuPw261pT7tztxFcv8fA0aw"
 VERCEL_PROJECT_ID = "prj_PhQvuJOVigfQZpnx71re7o1rnGpl"
@@ -25,6 +25,7 @@ ALLOWED_ISSUERS = {
     "https://oidc.vercel.com",
 }
 ALLOWED_ENVIRONMENTS = {"production", "preview"}
+_deep_health_cache: Optional[dict] = None
 
 
 class Room(BaseModel):
@@ -149,35 +150,7 @@ def require_token(authorization: Optional[str]) -> None:
     _verify_vercel_oidc(supplied)
 
 
-@app.get("/health")
-def health():
-    try:
-        completed = subprocess.run(
-            ["blender", "--version"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            timeout=10,
-            check=False,
-        )
-        first_line = (completed.stdout or "").splitlines()[0] if completed.stdout else ""
-        return {
-            "ok": completed.returncode == 0,
-            "engine": "blender",
-            "mode": "cycles",
-            "version": first_line,
-            "auth": "vercel-oidc",
-        }
-    except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Blender unavailable: {exc}") from exc
-
-
-@app.post("/render")
-def render_scene(payload: RenderRequest, authorization: Optional[str] = Header(default=None)):
-    require_token(authorization)
-    if not payload.rooms:
-        raise HTTPException(status_code=400, detail="At least one room is required")
-
+def _run_blender(payload: RenderRequest, timeout_seconds: int = 240) -> tuple[Path, str]:
     temp_dir = tempfile.mkdtemp(prefix="chillbros-blender-")
     request_path = Path(temp_dir) / "scene.json"
     output_path = Path(temp_dir) / "render.png"
@@ -200,16 +173,77 @@ def render_scene(payload: RenderRequest, authorization: Optional[str] = Header(d
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            timeout=240,
+            timeout=timeout_seconds,
             check=False,
         )
     except subprocess.TimeoutExpired as exc:
         raise HTTPException(status_code=504, detail="Blender render timed out") from exc
 
+    output = completed.stdout or ""
     if completed.returncode != 0 or not output_path.exists():
-        tail = (completed.stdout or "")[-3000:]
-        raise HTTPException(status_code=500, detail=f"Blender render failed: {tail}")
+        raise HTTPException(status_code=500, detail=f"Blender render failed: {output[-3000:]}")
+    return output_path, output
 
+
+@app.get("/health")
+def health():
+    try:
+        completed = subprocess.run(
+            ["blender", "--version"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        first_line = (completed.stdout or "").splitlines()[0] if completed.stdout else ""
+        return {
+            "ok": completed.returncode == 0,
+            "engine": "blender",
+            "mode": "cycles",
+            "version": first_line,
+            "auth": "vercel-oidc",
+            "deepTest": _deep_health_cache,
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Blender unavailable: {exc}") from exc
+
+
+@app.get("/health/deep")
+def deep_health():
+    global _deep_health_cache
+    if _deep_health_cache is not None:
+        return _deep_health_cache
+
+    payload = RenderRequest(
+        projectName="Chill Bros Blender Self Test",
+        notes="mini split",
+        rooms=[Room(id="self-test", name="Test Room", width=10, depth=10, height=8, verified=True)],
+        brief=Brief(projectTitle="Worker Self Test", finishedProduct="mini split installation"),
+        samples=16,
+        width=640,
+        height=480,
+    )
+    output_path, output = _run_blender(payload, timeout_seconds=120)
+    _deep_health_cache = {
+        "ok": True,
+        "engine": "blender",
+        "mode": "cycles",
+        "rendered": output_path.exists(),
+        "bytes": output_path.stat().st_size if output_path.exists() else 0,
+        "cyclesSeen": "Cycles" in output or "cycles" in output.lower(),
+        "cached": True,
+    }
+    return _deep_health_cache
+
+
+@app.post("/render")
+def render_scene(payload: RenderRequest, authorization: Optional[str] = Header(default=None)):
+    require_token(authorization)
+    if not payload.rooms:
+        raise HTTPException(status_code=400, detail="At least one room is required")
+
+    output_path, _ = _run_blender(payload, timeout_seconds=240)
     return FileResponse(
         path=str(output_path),
         media_type="image/png",
